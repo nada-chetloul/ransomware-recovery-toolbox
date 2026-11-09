@@ -16,7 +16,7 @@ Archives are added to the toolbox so they can be analyzed and processed.
 The system scans the archive, identifies encrypted files, and starts the restoration process.
 
 ### 🔑 Key Recovery
-![Key found](screenshot/wsl_cletrouve.png)
+![Key found](screenshot/wsl_cletrouver.png)
 The key is automatically deduced from the encrypted files and stored by the system.
 
 ### 📄 Decrypted File
