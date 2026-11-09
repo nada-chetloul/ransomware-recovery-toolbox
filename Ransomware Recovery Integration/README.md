@@ -127,6 +127,7 @@ client2-20250411-1341.tar.gz:20251104-134407::f
 ├── src/
 │   ├── Makefile                           # Makefile
 │   ├── base64_lib.c
+│   ├── base64_lib.h
 │   ├── decipher.c
 │   ├── findkey.c
 │   ├── key_lib.c
