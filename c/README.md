@@ -1,159 +1,159 @@
-# Documentation : cipher / decipher / findkey 
+# Documentation: cipher / decipher / findkey
 
 
-## Présentation générale 
-Ce projet implémente un système de chiffrement basé sur : 
-1. Base64  
-2. Chiffrement de Vigenère, mais appliqué sur les indices Base64 
-3. Conservation du padding Base64 (=) et des retours à la ligne 
+## Overview
+This project implements an encryption system based on:
+1. Base64
+2. The Vigenère cipher, applied to Base64 indices
+3. Preservation of Base64 padding (`=`) and line breaks
 
-Les outils sont : 
-* cipher : applique Vigenère (chiffrement) sur du Base64 
-* decipher : applique Vigenère inverse sur du Base64 
-* findkey : retrouve automatiquement la clé utilisée en base 64 
+The tools are:
+* cipher: applies Vigenère (encryption) to Base64 data
+* decipher: applies inverse Vigenère to Base64 data
+* findkey: automatically recovers the key used, in Base64
 
 ---
 
-## 1. cipher — Chiffrement 
-🔹 **Objectif**  
-Prend un fichier déjà encodé en Base64, et applique Vigenère sur chaque caractère Base64. La clé passée en argument est aussi supposée être en Base64, mais les = sont ignorés. 
+## 1. cipher — Encryption
+🔹 **Purpose**  
+Takes a file that is already Base64-encoded and applies Vigenère to each Base64 character. The key passed as an argument is also assumed to be in Base64, but `=` characters are ignored.
 
-### Préparation de la clé
-Avant d'utiliser `cipher`, la clé en clair doit être convertie en Base64 :
+### Key Preparation
+Before using `cipher`, the plaintext key must be converted to Base64:
 ```bash
-echo -n "la clé claire" | base64
+echo -n "my plain key" | base64
 ```
 
-### Fonctionnement du code 
+### How the Code Works
 
-#### a. Lecture du fichier 
-* On ouvre le fichier et on lit tout son contenu dans un buffer dynamique. 
-* On ajoute \0 pour faire une chaîne C. 
+#### a. Reading the file
+* The file is opened and its entire content is read into a dynamic buffer.
+* A `\0` is appended to make it a C string.
 
-#### b. Nettoyage de la clé 
+#### b. Cleaning the key
 ```c
 if (argv[1][i] != '=') key[j++] = argv[1][i];
 ```
-Les caractères = dans la clé sont supprimés. 
- 
-#### c. Conversion Base64 
-Deux fonctions essentielles :
-* `base64_index(c)` → Convertit un caractère Base64 → 0..63 
-* `base64_char(idx)` → Convertit 0..63 → caractère Base64
+`=` characters in the key are removed.
 
-#### d. Vigenère sur Base64 
-Pour chaque caractère :
+#### c. Base64 conversion
+Two essential functions:
+* `base64_index(c)` → converts a Base64 character → 0..63
+* `base64_char(idx)` → converts 0..63 → Base64 character
+
+#### d. Vigenère on Base64
+For each character:
 ```c
 idx_c = (idx_d + idx_k) % 64;
 ```
 
-Si le caractère est = ou \n : Aucun chiffrement, clé NON avancée. 
- 
-#### e. Écriture 
-Le fichier d'origine est écrasé par la version chiffrée. 
+If the character is `=` or `\n`: no encryption, and the key is NOT advanced.
 
-### Utilisation du résultat
-Le résultat de `cipher` est du Base64 chiffré. Pour obtenir le binaire brut :
+#### e. Writing
+The original file is overwritten with the encrypted version.
+
+### Using the Result
+The output of `cipher` is encrypted Base64. To get the raw binary:
 ```bash
-cat resultat_cipher | base64 -d
+cat cipher_result | base64 -d
 ```
 
 ---
 
-## 2. decipher — Déchiffrement 
-🔹 **Objectif**  
-Même fonctionnement que cipher, mais on effectue l'opération inverse : 
+## 2. decipher — Decryption
+🔹 **Purpose**  
+Works like cipher, but performs the inverse operation:
 ```c
 idx_p = (idx_d - idx_k + 64) % 64;
 ```
- 
-### Fonctionnement du code 
 
-#### a. Lecture complète du fichier (comme cipher) 
+### How the Code Works
 
-#### b. Nettoyage de la clé (suppression des =) 
+#### a. Reading the whole file (like cipher)
 
-#### c. Déchiffrement 
-* Pour chaque caractère Base64 valide → on applique Vigenère inverse
+#### b. Cleaning the key (removing `=`)
+
+#### c. Decryption
+* For each valid Base64 character → apply inverse Vigenère
 ```c
 int idx_p = (idx_d - idx_k + 64) % 64;
 ```
-* Les = et \n ne sont jamais modifiés, la clé n'avance pas dessus. 
+* `=` and `\n` are never modified, and the key does not advance on them.
 
-Le résultat (toujours du Base64) est écrit dans le même fichier.
+The result (still Base64) is written to the same file.
 
-### Récupération du fichier en clair
-Après `decipher`, le résultat est du Base64 déchiffré. Pour obtenir le fichier original :
+### Recovering the Plaintext File
+After `decipher`, the result is decrypted Base64. To get the original file:
 ```bash
-cat resultat_decipher | base64 -d
+cat decipher_result | base64 -d
 ```
 
-Pour les fichiers binaires (images, etc.), rediriger vers un nouveau fichier :
+For binary files (images, etc.), redirect to a new file:
 ```bash
-base64 -d resultat_decipher.png > resultat_final.png
+base64 -d decipher_result.png > final_result.png
 ```
 
 ---
 
-## 3. findkey — Retrouver la clé 
-🔹 **Objectif**  
-À partir de : 
-* un fichier clair Base64 
-* un fichier chiffré Base64 
+## 3. findkey — Recovering the Key
+🔹 **Purpose**  
+From:
+* a plaintext Base64 file
+* an encrypted Base64 file
 
-retrouver : 
-* la clé brute (une répétition de la clé réelle) 
-* la période minimale de la clé 
-* la clé réelle 
+recover:
+* the raw key (a repetition of the real key)
+* the minimal period of the key
+* the real key
 
-### Fonctionnement du code 
+### How the Code Works
 
-#### a. Lecture des deux fichiers en Base64 
-* On lit entièrement les deux fichiers. 
-* On compare caractère par caractère. 
+#### a. Reading both Base64 files
+* Both files are read entirely.
+* They are compared character by character.
 
-#### b. Extraction brute des caractères de clé 
-Pour chaque position i : 
+#### b. Raw extraction of key characters
+For each position i:
 
-Si clair64[i] et chiff64[i] sont valides : 
+If clair64[i] and chiff64[i] are valid:
 ```c
 idx_k = (idx_x - idx_c + 64) % 64;
 key_raw[kr++] = base64_char(idx_k);
 ```
 
-Résultat : `key_raw = KKKKKKKKKKKK...` (la clé répétée) 
+Result: `key_raw = KKKKKKKKKKKK...` (the repeated key)
 
-#### c. Détection de la période réelle 
-`find_period()` cherche la plus petite longueur p telle que : 
+#### c. Detecting the real period
+`find_period()` looks for the smallest length p such that:
 ```
-key_raw[i] == key_raw[i % p] pour tout i
-```
-
-Exemple : 
-```
-key_raw = ABCABCABCABC → période = 3 → clé = "ABC"
+key_raw[i] == key_raw[i % p] for all i
 ```
 
-#### d. Sorties : 
-* stdout → la clé réelle 
-* stderr → la longueur de la clé
+Example:
+```
+key_raw = ABCABCABCABC → period = 3 → key = "ABC"
+```
+
+#### d. Outputs:
+* stdout → the real key
+* stderr → the key length
 
 ---
 
-## Résumé des flux de données
+## Data Flow Summary
 
-### 🔶 Chiffrement complet
+### 🔶 Full Encryption
 ```
-[Clé claire] → base64 → [Clé Base64]
-[Fichier binaire] → base64 → [Base64 clair] → cipher → [Base64 chiffré] → base64 -d → [Binaire chiffré]
-```
-
-### 🔶 Déchiffrement complet
-```
-[Base64 chiffré] → decipher → [Base64 clair] → base64 -d → [Fichier original]
+[Plain key] → base64 → [Base64 key]
+[Binary file] → base64 → [Plain Base64] → cipher → [Encrypted Base64] → base64 -d → [Encrypted binary]
 ```
 
-### 🔶 Recherche de clé
+### 🔶 Full Decryption
 ```
-[clair64] + [chiffré64] → findkey → [clé Base64] → période → [clé finale]
+[Encrypted Base64] → decipher → [Plain Base64] → base64 -d → [Original file]
+```
+
+### 🔶 Key Search
+```
+[clair64] + [chiffre64] → findkey → [Base64 key] → period → [final key]
 ```
