@@ -1,142 +1,142 @@
-# Documentation : Système de Chiffrement Vigenère Base64 (Compilation Séparée)
+# Documentation: Vigenère Base64 Encryption System (Separate Compilation)
 
-## Organisation du projet
+## Project Organization
 
-### Structure des fichiers
+### File Structure
 ```
 .
-├── Makefile                  # Orchestration de la compilation
-├── cipher.c                  # Programme de chiffrement
-├── decipher.c                # Programme de déchiffrement
-├── findkey.c                 # Programme d'extraction de clé
-├── base64_lib.c / .h         # Bibliothèque conversion Base64
-├── vignere_lib.c / .h        # Bibliothèque chiffrement Vigenère
-├── key_lib.c / .h            # Bibliothèque détection de période
-└── exemple.txt               # Fichier de test
+├── Makefile                  # Build orchestration
+├── cipher.c                  # Encryption program
+├── decipher.c                # Decryption program
+├── findkey.c                 # Key extraction program
+├── base64_lib.c / .h         # Base64 conversion library
+├── vignere_lib.c / .h        # Vigenère encryption library
+├── key_lib.c / .h            # Period detection library
+└── exemple.txt               # Test file
 ```
 
-### Architecture 
+### Architecture
 
-**Bibliothèque Base64** (`base64_lib`)
-- `base64_index(char)` : convertit un caractère Base64 → index (0-63)
-- `base64_char(int)` : convertit un index (0-63) → caractère Base64
+**Base64 Library** (`base64_lib`)
+- `base64_index(char)`: converts a Base64 character → index (0-63)
+- `base64_char(int)`: converts an index (0-63) → Base64 character
 
-**Bibliothèque Vigenère** (`vignere_lib`)
-- `vigenere_base64()` : chiffrement Vigenère sur Base64
-- `vigenere_base64_decode()` : déchiffrement Vigenère sur Base64
-- `decode_vigenere()` : extraction de clé brute par comparaison
+**Vigenère Library** (`vignere_lib`)
+- `vigenere_base64()`: Vigenère encryption on Base64
+- `vigenere_base64_decode()`: Vigenère decryption on Base64
+- `decode_vigenere()`: raw key extraction by comparison
 
-**Bibliothèque Clé** (`key_lib`)
-- `find_period()` : détecte la période minimale d'une clé répétée
+**Key Library** (`key_lib`)
+- `find_period()`: detects the minimal period of a repeated key
 
 ---
 
 ## Compilation
 
-### Méthode 1 : Compilation des exécutables
+### Method 1: Compiling the executables
 ```bash
 make all
 ```
 
-**Génère :**
-- `cipher` : exécutable de chiffrement
-- `decipher` : exécutable de déchiffrement
-- `findkey` : exécutable d'extraction de clé
+**Generates:**
+- `cipher`: encryption executable
+- `decipher`: decryption executable
+- `findkey`: key extraction executable
 
-### Méthode 2 : Processus complet automatisé
+### Method 2: Fully automated process
 ```bash
-make process INPUT=fichier.txt KEY=MaCleBase64
+make process INPUT=fichier.txt KEY=MyBase64Key
 ```
 
-**Actions effectuées :**
-1. Compile tous les programmes
-2. Encode `INPUT` en Base64 → `clair64`
-3. Crée une copie → `exempleres`
-4. Chiffre `exempleres` avec `KEY`
-5. Sauvegarde le résultat → `chiffre64`
-6. Déchiffre `exempleres`
-7. Extrait la clé depuis `clair64` et `chiffre64`
+**Actions performed:**
+1. Compiles all programs
+2. Encodes `INPUT` in Base64 → `clair64`
+3. Creates a copy → `exempleres`
+4. Encrypts `exempleres` with `KEY`
+5. Saves the result → `chiffre64`
+6. Decrypts `exempleres`
+7. Extracts the key from `clair64` and `chiffre64`
 
-**Exemple concret :**
+**Concrete example:**
 ```bash
 make process INPUT=exemple.txt KEY=CleSAE2025A
 ```
 
-### Nettoyage
+### Cleaning
 ```bash
 make clean
 ```
 
-Supprime tous les fichiers générés (exécutables, `.o`, fichiers temporaires).
+Removes all generated files (executables, `.o` files, temporary files).
 
 ---
 
-## Utilisation des programmes
+## Using the Programs
 
-### 1. cipher - Chiffrement
+### 1. cipher - Encryption
 
-**Syntaxe :**
+**Syntax:**
 ```bash
-./cipher <clé_base64> <fichier_base64>
+./cipher <base64_key> <base64_file>
 ```
 
-**Comportement :**  
-Applique le chiffrement Vigenère sur les caractères Base64 du fichier (en ignorant `=` et `\n`), puis écrase le fichier avec le résultat chiffré.
+**Behavior:**  
+Applies the Vigenère cipher to the Base64 characters of the file (ignoring `=` and `\n`), then overwrites the file with the encrypted result.
 
-**Exemple :**
+**Example:**
 ```bash
-# Préparation : encoder un fichier texte en Base64
+# Preparation: encode a text file in Base64
 base64 message.txt > message_b64.txt
 
 # Compilation
 make cipher
 
-# Chiffrement
+# Encryption
 ./cipher "ABC123==" message_b64.txt
 ```
 
-**Output :** le texte chiffré en Base64
+**Output:** the encrypted text in Base64
 
 ---
 
-### 2. decipher - Déchiffrement
+### 2. decipher - Decryption
 
-**Syntaxe :**
+**Syntax:**
 ```bash
-./decipher <clé_base64> <fichier_chiffré>
+./decipher <base64_key> <encrypted_file>
 ```
 
-**Comportement :**  
-Inverse le chiffrement Vigenère pour retrouver le Base64 original, puis écrase le fichier avec le résultat.
+**Behavior:**  
+Reverses the Vigenère encryption to recover the original Base64, then overwrites the file with the result.
 
-**Exemple :**
+**Example:**
 ```bash
 # Compilation
 make decipher
 
-# Déchiffrement
+# Decryption
 ./decipher "ABC123==" message_b64.txt
 ```
 
-**Output :** le texte déchiffré en Base64
+**Output:** the decrypted text in Base64
 
 ---
 
-### 3. findkey - Extraction de clé
+### 3. findkey - Key Extraction
 
-**Syntaxe :**
+**Syntax:**
 ```bash
-./findkey <fichier_clair_b64> <fichier_chiffré_b64>
+./findkey <plaintext_b64_file> <encrypted_b64_file>
 ```
 
-**Comportement :**  
-Compare les deux fichiers pour extraire la clé utilisée, détecte sa période minimale et l'affiche.
+**Behavior:**  
+Compares the two files to extract the key used, detects its minimal period, and prints it.
 
-**Sorties :**
-- `stdout` → clé minimale
-- `stderr` → longueur de la clé
+**Outputs:**
+- `stdout` → minimal key
+- `stderr` → key length
 
-**Exemple :**
+**Example:**
 ```bash
 # Compilation
 make findkey
@@ -145,8 +145,8 @@ make findkey
 ./findkey clair64 chiffre64
 ```
 
-**Output :**
+**Output:**
 ```
-ABC123        (sur stdout)
-6             (sur stderr)
+ABC123        (on stdout)
+6             (on stderr)
 ```
