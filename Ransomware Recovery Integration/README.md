@@ -1,8 +1,8 @@
-# Documentation de la partie intégration (bonus)
+# Integration Documentation (Bonus)
 
-## Compilation des binaires
+## Compiling the Binaries
 
-Avant d'utiliser les scripts de restauration, il est nécessaire de compiler les programmes C :
+Before using the restoration scripts, the C programs must be compiled:
 ```bash
 make -C src
 mv src/decipher src/findkey .
@@ -10,103 +10,103 @@ mv src/decipher src/findkey .
 
 ---
 
-## Script restore-archive.sh
+## restore-archive.sh Script
 
-### Fonctionnement général
-Ce script utilise les variables exportées par `check-archive.sh` pour restaurer les fichiers chiffrés d'une archive.
+### Overview
+This script uses the variables exported by `check-archive.sh` to restore the encrypted files of an archive.
 
-### Intégration avec check-archive.sh
-Le script source `check-archive.sh` pour récupérer automatiquement :
-- `$ARCHIVE_SELECTED` : nom de l'archive sélectionnée
-- `$ATTACK_TS` : timestamp de l'attaque (en secondes)
-- `$DATA_DIR` : chemin vers le dossier data décompressé
-- `$MODIFIED_FILES` : fichier temporaire listant les fichiers modifiés
-- `$TMP_DIR` : dossier temporaire d'extraction
+### Integration with check-archive.sh
+The script sources `check-archive.sh` to automatically retrieve:
+- `$ARCHIVE_SELECTED`: name of the selected archive
+- `$ATTACK_TS`: attack timestamp (in seconds)
+- `$DATA_DIR`: path to the decompressed data folder
+- `$MODIFIED_FILES`: temporary file listing the modified files
+- `$TMP_DIR`: temporary extraction folder
 
-### Appels aux scripts existants
+### Calls to Existing Scripts
 ```bash
-./init-toolbox.sh      # Vérifie/compile les binaires
-./restore-toolbox.sh   # Vérifie la cohérence des archives
+./init-toolbox.sh      # Checks/compiles the binaries
+./restore-toolbox.sh   # Checks archive consistency
 ```
 
-### Processus de restauration
+### Restoration Process
 
-#### 1. Détection et recherche de clé
-Pour chaque fichier chiffré (listé dans `$MODIFIED_FILES`) :
-- Recherche du fichier clair correspondant (même nom, modifié avant l'attaque)
-- Appel de `./findkey` avec les versions base64 des deux fichiers
-- Stockage temporaire de la clé dans `/tmp/key_restore`
+#### 1. Detection and Key Search
+For each encrypted file (listed in `$MODIFIED_FILES`):
+- Look for the matching plaintext file (same name, modified before the attack)
+- Call `./findkey` with the base64 versions of both files
+- Temporarily store the key in `/tmp/key_restore`
 
-#### 2. Gestion du type de clé
-La clé est analysée pour déterminer son type :
+#### 2. Key Type Handling
+The key is analyzed to determine its type:
 
-**Clé imprimable** (caractères affichables uniquement) :
-- Test : `[[ $key =~ ^[[:print:]]+$ ]]`
-- Stockage : directement dans le fichier `archives` (colonne 3)
-- Format : `archive.tar.gz:date:CLE:s`
+**Printable key** (displayable characters only):
+- Test: `[[ $key =~ ^[[:print:]]+$ ]]`
+- Storage: directly in the `archives` file (column 3)
+- Format: `archive.tar.gz:date:KEY:s`
 
-**Clé non-imprimable** (contient des caractères binaires) :
-- Création d'un dossier : `.sh-toolbox/nom_archive/` (sans .tar.gz)
-- Stockage : dans le fichier `KEY` de ce dossier
-- Format : `archive.tar.gz:date::f`
+**Non-printable key** (contains binary characters):
+- Creation of a folder: `.sh-toolbox/archive_name/` (without .tar.gz)
+- Storage: in the `KEY` file of that folder
+- Format: `archive.tar.gz:date::f`
 
-#### 3. Mise à jour du fichier archives
-Utilisation de `sed` avec des expressions régulières pour modifier la ligne correspondante :
+#### 3. Updating the archives File
+Uses `sed` with regular expressions to modify the corresponding line:
 ```bash
 safe_archive=$(echo "$archive_select" | sed 's/[][\.*^$/]/\\&/g')
 sed -Ei "2,\$ s|^($safe_archive:[^:]*:).*|\1$key:s|" "$wd/archives"
 ```
 
-#### 4. Déchiffrement des fichiers
-- Récupération de la clé selon son type (s ou f)
-- Pour chaque fichier dans `$MODIFIED_FILES` :
-  - Calcul du chemin relatif depuis `$TMP_DIR`
-  - Demande de confirmation si le fichier existe déjà
-  - Appel de `./decipher CLE fichier_base64`
-  - Extraction du contenu déchiffré via `awk`
-  - Écriture dans le dossier de destination
+#### 4. Decrypting the Files
+- Retrieve the key according to its type (s or f)
+- For each file in `$MODIFIED_FILES`:
+  - Compute the relative path from `$TMP_DIR`
+  - Ask for confirmation if the file already exists
+  - Call `./decipher KEY base64_file`
+  - Extract the decrypted content via `awk`
+  - Write it to the destination folder
 
-### Codes de retour
-- `0` : restauration réussie
-- `1` : dossier .sh-toolbox inexistant
-- `2` : échec création dossier destination
-- `3` : échec mise à jour du fichier archives
-- `4` : échec restauration d'un fichier
-
----
-
-## Améliorations de init-toolbox.sh
-
-### Compilation automatique des binaires
-
-Ajout d'une boucle de vérification et compilation pour `decipher` et `findkey` .
-
-### Nouveaux codes de retour
-- `10` : fichier source (.c) manquant
-- `11` : compilateur GCC non disponible
-- `12` : échec de la compilation
-
-### Fonctionnement
-1. Vérifie si le binaire existe et est exécutable (`-x`)
-2. Si absent, cherche le fichier source dans `./src/`
-3. Vérifie la disponibilité de `gcc`
-4. Compile automatiquement le programme
-5. Affiche un message de confirmation
+### Return Codes
+- `0`: restoration successful
+- `1`: .sh-toolbox folder does not exist
+- `2`: failed to create destination folder
+- `3`: failed to update the archives file
+- `4`: failed to restore a file
 
 ---
 
-## Structure du fichier archives (format étendu)
+## init-toolbox.sh Improvements
+
+### Automatic Binary Compilation
+
+Added a check-and-compile loop for `decipher` and `findkey`.
+
+### New Return Codes
+- `10`: source file (.c) missing
+- `11`: GCC compiler not available
+- `12`: compilation failed
+
+### How It Works
+1. Checks whether the binary exists and is executable (`-x`)
+2. If missing, looks for the source file in `./src/`
+3. Checks that `gcc` is available
+4. Automatically compiles the program
+5. Displays a confirmation message
+
+---
+
+## archives File Structure (Extended Format)
 ```
-nombre_archives
-archive1.tar.gz:date_import:cle_ou_vide:type
-archive2.tar.gz:date_import:cle_ou_vide:type
+number_of_archives
+archive1.tar.gz:import_date:key_or_empty:type
+archive2.tar.gz:import_date:key_or_empty:type
 ```
 
-**Colonne 4 (type)** :
-- `s` : clé stockée dans le fichier archives (string)
-- `f` : clé stockée dans un fichier externe (file)
+**Column 4 (type)**:
+- `s`: key stored in the archives file (string)
+- `f`: key stored in an external file (file)
 
-### Exemples
+### Examples
 ```
 2
 client1-20250411-1311.tar.gz:20251104-131504:CleSAE2025:s
@@ -115,18 +115,17 @@ client2-20250411-1341.tar.gz:20251104-134407::f
 
 ---
 
-## Arborescence complète du projet
+## Full Project Tree
 ```
 .
 ├── .sh-toolbox/
-│   ├── archives                           # Fichier index
+│   ├── archives                           # Index file
 │   ├── client1-20250411-1311.tar.gz      # Archive 1
 │   ├── client2-20250411-1341.tar.gz      # Archive 2
-│   └── client2-20250411-1341/            # Dossier clé
-│       └── KEY                            # Clé non-imprimable
+│   └── client2-20250411-1341/            # Key folder
+│       └── KEY                            # Non-printable key
 ├── src/
 │   ├── Makefile                           # Makefile
-│   ├── base64_lib.c
 │   ├── base64_lib.c
 │   ├── decipher.c
 │   ├── findkey.c
@@ -140,26 +139,26 @@ client2-20250411-1341.tar.gz:20251104-134407::f
 ├── ls-toolbox.sh
 ├── restore-toolbox.sh
 ├── restore-archive.sh
-├── decipher                               # Binaire compilé
-└── findkey                                # Binaire compilé
+├── decipher                               # Compiled binary
+└── findkey                                # Compiled binary
 ```
 
 ---
 
-## Flux de données entre les scripts
+## Data Flow Between Scripts
 ```
 restore-archive.sh
-    ↓ source
+    ↓ sources
 check-archive.sh
-    → exporte: ARCHIVE_SELECTED, ATTACK_TS, DATA_DIR, MODIFIED_FILES, TMP_DIR
+    → exports: ARCHIVE_SELECTED, ATTACK_TS, DATA_DIR, MODIFIED_FILES, TMP_DIR
     ↓
 restore-archive.sh
-    ↓ appelle
-init-toolbox.sh (compile decipher + findkey)
-    ↓ appelle
-restore-toolbox.sh (vérifie cohérence)
+    ↓ calls
+init-toolbox.sh (compiles decipher + findkey)
+    ↓ calls
+restore-toolbox.sh (checks consistency)
     ↓
-Traitement des fichiers chiffrés
-    → ./findkey → détection type clé → mise à jour archives
-    → ./decipher → restauration fichiers
+Processing of encrypted files
+    → ./findkey → key type detection → archives update
+    → ./decipher → file restoration
 ```
