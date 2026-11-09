@@ -1,32 +1,32 @@
-# Documentation des scripts Bash – SAE Sécurité
+# Bash Scripts Documentation – SAE Security
 
-Cette documentation explique le fonctionnement, l’utilisation et le rôle de chacun des scripts développés dans le cadre de la SAE. Elle décrit également les codes de retour, les messages affichés et les prérequis nécessaires.
+This documentation explains how each script developed for the SAE works, how to use it, and what role it plays. It also describes the return codes, the messages displayed, and the required prerequisites.
 
 ## 1. init-toolbox.sh
 
-### Objectif du script
-Ce script initialise l’environnement de travail de l’outil en créant automatiquement :
-- un dossier `.sh-toolbox` (s’il n’existe pas),
-- un fichier `archives` contenant le nombre d’archives importées.
+### Purpose of the script
+This script initializes the tool's working environment by automatically creating:
+- a `.sh-toolbox` folder (if it does not exist),
+- an `archives` file containing the number of imported archives.
 
-### Fonctionnement
-1. Vérifie l’existence du dossier `.sh-toolbox`.
-2. Le crée s’il est absent.
-3. Vérifie l’existence du fichier `archives`.
-4. Le crée s’il est absent et y inscrit 0.
-5. Vérifie qu’aucun autre fichier ou dossier supplémentaire ne se trouve dans `.sh-toolbox`.
+### How it works
+1. Checks whether the `.sh-toolbox` folder exists.
+2. Creates it if it is missing.
+3. Checks whether the `archives` file exists.
+4. Creates it if it is missing and writes 0 in it.
+5. Checks that no other file or folder is present in `.sh-toolbox`.
 
-### Codes retour
-- **0** : Initialisation correcte lorsque dossier + fichier existants.
-- **1** : Impossible de créer le dossier ou fichier.
-- **2** : Présence d’éléments non autorisés dans `.sh-toolbox`.
+### Return codes
+- **0**: Correct initialization when the folder and file already exist.
+- **1**: Unable to create the folder or file.
+- **2**: Unauthorized items present in `.sh-toolbox`.
 
-### Exemple d’exécution
+### Example
 ```bash
 ./init-toolbox.sh
 ```
 
-### Output possible :
+### Possible output:
 ```text
 creation du dossier
 le dossier a etais cree
@@ -38,116 +38,116 @@ dossier
 
 ## 2. import-archive.sh
 
-### Objectif
-Importer une archive `.tar.gz` dans l’environnement de travail. Ce script :
-- copie l’archive dans `.sh-toolbox`,
-- demande confirmation si elle existe déjà (sauf mode `-f`),
-- met à jour le fichier `archives`.
+### Purpose
+Import a `.tar.gz` archive into the working environment. This script:
+- copies the archive into `.sh-toolbox`,
+- asks for confirmation if it already exists (unless in `-f` mode),
+- updates the `archives` file.
 
-### Fonctionnement
-1. Vérifie l'existence de `.sh-toolbox`.
-2. Vérifie l'existence de l’archive passée en paramètre.
-3. Copie l’archive dans `.sh-toolbox`.
-4. Si elle existe déjà : demande validation utilisateur sauf si `-f`.
-5. Met à jour :
-    1. première ligne du fichier `archives` (nombre total),
-    2. nouvelle ligne descriptive : `nom_archive:date_ajout:clé`
+### How it works
+1. Checks that `.sh-toolbox` exists.
+2. Checks that the archive passed as a parameter exists.
+3. Copies the archive into `.sh-toolbox`.
+4. If it already exists: asks the user for confirmation unless `-f` is used.
+5. Updates:
+    1. the first line of the `archives` file (total count),
+    2. a new descriptive line: `archive_name:date_added:key`
 
-### Modes disponibles
-- **Normal** : confirmation nécessaire pour écraser.
-- **Forcé (-f)** : écrasement automatique.
-- **Multi-import** : possibilité d’ajouter plusieurs archives en un appel.
+### Available modes
+- **Normal**: confirmation required to overwrite.
+- **Forced (-f)**: automatic overwrite.
+- **Multi-import**: several archives can be added in a single call.
 
-### Exemple d’exécution
+### Example
 ```bash
 ./import-archive.sh client1.tar.gz
 ./import-archive.sh -f client1.tar.gz
 ./import-archive.sh client1.tar.gz client2.tar.gz
 ```
 
-### Codes retour
-- **0** : Copie effectuée ou copie annulée.
-- **1** : `.sh-toolbox` inexistant.
-- **2** : Archive introuvable.
+### Return codes
+- **0**: Copy completed or copy cancelled.
+- **1**: `.sh-toolbox` does not exist.
+- **2**: Archive not found.
 
-> **Note (bonus)** : Dans la version bonus, le script peut recevoir plusieurs paramètres. Si l’un des fichiers indiqués n’existe pas, le script affiche un message d’erreur, puis utilise `continue` à la place de `exit 2` afin de poursuivre la vérification des autres paramètres.
+> **Note (bonus)**: In the bonus version, the script can receive several parameters. If one of the given files does not exist, the script displays an error message, then uses `continue` instead of `exit 2` in order to keep checking the other parameters.
 
-- **3** : Erreur lors de la copie.
-- **4** : Erreur mise à jour du fichier `archives`.
+- **3**: Error during copy.
+- **4**: Error updating the `archives` file.
 
 ## 3. ls-toolbox.sh
 
-### Objectif
-Afficher la liste des archives enregistrées dans le fichier “archives”.
+### Purpose
+Display the list of archives recorded in the "archives" file.
 
-### Fonctionnement
-1. Vérifie la présence de `.sh-toolbox` et du fichier `archives`.
-2. Lit toutes les lignes (sauf la première) du fichier `archives`.
-3. Affiche pour chaque archive : `Nom – date d’ajout – clé connue ou inconnue`
+### How it works
+1. Checks that `.sh-toolbox` and the `archives` file are present.
+2. Reads all lines (except the first) of the `archives` file.
+3. Displays for each archive: `Name – date added – key known or unknown`
 
-### Exemple d’exécution
+### Example
 ```bash
 ./ls-toolbox.sh
 ```
 
-### Output possible :
+### Possible output:
 ```text
 Nom : client1.tar.gz date : 20251104-131504 clé : inconnue
 ```
 
-### Codes retour
-- **0** : Affichage réussi.
-- **1** : `.sh-toolbox` absent.
-- **2** : fichier `archives` absent.
-- **3 (bonus)** : incohérences trouvées.
+### Return codes
+- **0**: Display successful.
+- **1**: `.sh-toolbox` missing.
+- **2**: `archives` file missing.
+- **3 (bonus)**: inconsistencies found.
 
 ## 4. restore-toolbox.sh (bonus)
 
-### Objectif
-Réparer automatiquement l’environnement `.sh-toolbox` en cas d’erreur ou incohérence.
+### Purpose
+Automatically repair the `.sh-toolbox` environment in case of error or inconsistency.
 
-### Problèmes détectés
-- Dossier `.sh-toolbox` manquant.
-- Fichier `archives` manquant.
-- Archive mentionnée mais non présente physiquement.
-- Archive présente physiquement mais non listée dans `archives`.
+### Detected problems
+- `.sh-toolbox` folder missing.
+- `archives` file missing.
+- Archive listed but not physically present.
+- Archive physically present but not listed in `archives`.
 
-### Fonctionnement
-Pour chaque anomalie trouvée, le script demande confirmation avant action :
-- création du dossier,
-- création du fichier,
-- suppression d’une ligne invalide,
-- ajout d’une archive manquante.
+### How it works
+For each anomaly found, the script asks for confirmation before acting:
+- creating the folder,
+- creating the file,
+- deleting an invalid line,
+- adding a missing archive.
 
-### Exemple d’exécution
+### Example
 ```bash
 ./restore-toolbox.sh
 ```
 
 ## 5. check-archive.sh
 
-### Objectif
-Analyser une archive afin d’identifier :
-- la dernière connexion SSH de l’utilisateur admin,
-- la liste des fichiers modifiés après cette date,
-- (bonus) les fichiers non modifiés mais identiques en nom et taille.
+### Purpose
+Analyze an archive in order to identify:
+- the admin user's last SSH login,
+- the list of files modified after that date,
+- (bonus) files that were not modified but have the same name and size.
 
-### Fonctionnement
-1. Vérifie `.sh-toolbox` et `archives`.
-2. Affiche la liste des archives et propose un choix.
-3. Décompresse dans un dossier temporaire.
-4. Recherche la dernière connexion admin dans : `var/log/auth.log`
-5. Parcourt `data/` pour identifier :
-    - fichiers modifiés après l’attaque,
-    - fichiers non modifiés identiques (bonus).
-    - Le fichier doit être en lecture seule et ne doit pas appartenir à l’utilisateur (bonus)
+### How it works
+1. Checks `.sh-toolbox` and `archives`.
+2. Displays the list of archives and offers a choice.
+3. Decompresses into a temporary folder.
+4. Looks for the last admin login in: `var/log/auth.log`
+5. Scans `data/` to identify:
+    - files modified after the attack,
+    - unmodified files with identical name and size (bonus).
+    - The file must be read-only and must not belong to the user (bonus)
 
-### Exemple d’utilisation
+### Example
 ```bash
 ./check-archive.sh
 ```
 
-### Output possible :
+### Possible output:
 ```text
 la liste des fichier est :
 arch1
@@ -162,10 +162,10 @@ Fichiers modifiés après la dernière connexion admin :
 .......
 ```
 
-### Codes retour
-- **0** : tout s’est bien passé.
-- **1** : `.sh-toolbox` absent.
-- **2** : fichier `archives` absent.
-- **3** : décompression échouée.
-- **4** : fichier log manquant.
-- **5** : dossier `data/` vide.
+### Return codes
+- **0**: everything went well.
+- **1**: `.sh-toolbox` missing.
+- **2**: `archives` file missing.
+- **3**: decompression failed.
+- **4**: log file missing.
+- **5**: `data/` folder empty.
